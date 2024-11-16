@@ -186,7 +186,7 @@ class _GestionArticlesPageState extends State<GestionarticlePage> {
     Dio dio = Dio();
     dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
 
-    var url = 'http://192.168.1.7:8080/api/articles';
+    var url = 'http://localhost:8080/api/articles';
 
     try {
       var response = await dio.get(
@@ -197,18 +197,46 @@ class _GestionArticlesPageState extends State<GestionarticlePage> {
           },
         ),
       );
-      print(response.data);
-      setState(() {
-        articles = parseArticle(response.data);
-      });
+
+      if (response.statusCode == 200) {
+        setState(() {
+          articles = parseArticle(response.data);
+        });
+      } else {
+        throw DioError(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioErrorType.response,
+          error: 'Failed to load data - status code: ${response.statusCode}',
+        );
+      }
     } catch (e) {
-      print('Error fetch data from backend: $e');
+      String errorMessage = 'Failed to fetch data. Please try again later.';
+      if (e is DioError) {
+        if (e.response != null) {
+          errorMessage =
+              'HTTP error ${e.response!.statusCode}: ${e.response!.statusMessage}';
+          // Log additional details
+          print('Error data: ${e.response!.data}');
+          print('Error headers: ${e.response!.headers}');
+        } else {
+          errorMessage = 'Request failed due to network issues or timeout.';
+          print('Error message: ${e.message}');
+        }
+      } else {
+        print('Unexpected error: $e');
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to fetch data. Please try again later.'),
+          content: Text(errorMessage),
         ),
       );
     }
+  }
+
+  List<Article> parseArticle(dynamic data) {
+    return (data as List).map((json) => Article.fromJson(json)).toList();
   }
 
   Future<void> addArticle() async {
@@ -219,12 +247,12 @@ class _GestionArticlesPageState extends State<GestionarticlePage> {
     Dio dio = Dio();
     dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
 
-    var url = 'http://192.168.1.7:8080/api/chantiers/addArticle';
+    var url = 'http://localhost:8080/api/articles/addArticle';
     CategorieDTO categorie = CategorieDTO(id: 1, libelle: "Default");
     String refArt = _referenceController.text;
     String libArt = _libelleController.text;
     double prixA = double.tryParse(_puhtController.text) ?? 0.0;
-    int tva = _tvaController as int;
+    int tva = int.tryParse(_tvaController.text) ?? 0;
     double prixV = double.tryParse(_puttcController.text) ?? 0.0;
     UniteDTO unite = UniteDTO(id: 1, libelle: "Default");
     var body = jsonEncode({
@@ -234,7 +262,7 @@ class _GestionArticlesPageState extends State<GestionarticlePage> {
       'prixA': prixA,
       'tva': tva,
       'prixV': prixV,
-      'unite': unite,
+      'unite': unite.toJson(),
     });
 
     try {
@@ -261,6 +289,9 @@ class _GestionArticlesPageState extends State<GestionarticlePage> {
       _showSnackBar('Article ajouté');
     } catch (e) {
       print('Error: $e');
+      if (e is DioError) {
+        print('DioError response: ${e.response}');
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to add Article'),
@@ -269,89 +300,58 @@ class _GestionArticlesPageState extends State<GestionarticlePage> {
     }
   }
 
-  Future<void> updateArticle(Article article) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? authToken = prefs.getString('token');
-    int? entrepriseId = prefs.getInt('entrepriseId');
+void _showSnackBar(String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+    ),
+  );
+}
 
-    Dio dio = Dio();
-    dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
 
-    var url = 'http://192.168.1.7:8080/api/articles/updateArticle/${article.id}';
 
-    article.categorie = CategorieDTO.fromString(_categorieController.text);
-    article.refArt = _referenceController.text;
-    article.libArt = _libelleController.text;
-    article.prixA = double.parse(_puhtController.text);
-    article.tva = int.parse(_tvaController.text);
-    article.prixV = double.parse(_puttcController.text);
-    article.unite = UniteDTO.fromString(_unitesController.text);
+Future<void> deleteArticle(Article article) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? authToken = prefs.getString('token');
+  int? entrepriseId = prefs.getInt('entrepriseId');
 
-    var body = article.toJson();
-
-    try {
-      var response = await dio.put(
-        url,
-        data: body,
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-          },
-        ),
-      );
-
-      _showSnackBar('Article modifié avec succès');
-    } catch (e) {
-      print('Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Échec de la modification de l\'article'),
-        ),
-      );
-    }
+  if (authToken == null || entrepriseId == null) {
+    print('Token or entrepriseId is null');
+    return;
   }
 
-  Future<void> deleteArticle(Article article) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? authToken = prefs.getString('token');
-    int? entrepriseId = prefs.getInt('entrepriseId');
+  Dio dio = Dio();
+  dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
 
-    if (authToken == null || entrepriseId == null) {
-      print('Token or entrepriseId is null');
-      return;
+  var url = 'http://localhost:8080/api/articles/deleteArticle/${article.id}';
+
+  try {
+    print('Sending DELETE request to: $url');
+    var response = await dio.delete(
+      url,
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      ),
+    );
+    print('Response: ${response.statusCode} ${response.data}');
+    if (response.statusCode == 200) {
+      setState(() {
+        articles.remove(article);
+      });
+      _showSnackBar('Article supprimé');
     }
-
-    Dio dio = Dio();
-    dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
-
-    var url = 'http://192.168.1.7:8080                                                                                                                        s/api/articles/deleteArticle/${article.id}';
-
-    try {
-      print('Sending DELETE request to: $url');
-      var response = await dio.delete(
-        url,
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-          },
-        ),
-      );
-      print('Response: ${response.statusCode} ${response.data}');
-      if (response.statusCode == 200) {
-        setState(() {
-          articles.remove(article);
-        });
-        _showSnackBar('Article supprimé');
-      }
-    } catch (e) {
-      print('Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to delete Article'),
-        ),
-      );
-    }
+  } catch (e) {
+    print('Error: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to delete Article'),
+      ),
+    );
   }
+}
+
 
   bool _validateFields() {
     if (_categorieController.text.isEmpty ||
@@ -367,231 +367,286 @@ class _GestionArticlesPageState extends State<GestionarticlePage> {
     return true;
   }
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      duration: Duration(seconds: 2),
-    ));
-  }
 
-  Widget _buildArticleCard(Article article) {
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  article.libArt,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        int index = articles.indexOf(article);
-                        _showEditArticleDialog(context, index);
-                      },
-                      icon: Icon(Icons.edit, color: Colors.blue),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return Dialog(
-                              child: Container(
-                                padding: EdgeInsets.all(16),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text('Supprimer l\'article'),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      'Êtes-vous sûr de vouloir supprimer cet article ?',
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    SizedBox(height: 16),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: Text('Annuler'),
+
+Widget _buildArticleCard(Article article) {
+  return Card(
+    margin: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+    elevation: 4,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade100, // Une nuance de bleu clair
+            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                article.libArt,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      int index = articles.indexOf(article);
+                      _showEditArticleDialog(context, index);
+                    },
+                    icon: Icon(Icons.edit, color: Colors.blue.shade700), // Bleu plus foncé
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return Dialog(
+                            child: Container(
+                              padding: EdgeInsets.all(16),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text('Supprimer l\'article'),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'Êtes-vous sûr de vouloir supprimer cet article ?',
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Text('Annuler'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          Navigator.of(context).pop();
+                                          await deleteArticle(article);
+                                        },
+                                        child: Text('Supprimer'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
                                         ),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              articles.remove(article);
-                                            });
-                                            Navigator.of(context).pop();
-                                            _showSnackBar('Article supprimé');
-                                          },
-                                          child: Text('Supprimer'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            );
-                          },
-                        );
-                      },
-                      icon: Icon(Icons.delete, color: Colors.red),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    icon: Icon(Icons.delete, color: Colors.red),
+                  ),
+                ],
+              ),
+            ],
           ),
-          Container(
-            padding: EdgeInsets.all(16),
-            color: Colors.blue.withOpacity(0.1),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /*Text('Catégorie: ${article.categorie}',
-                    style: TextStyle(fontSize: 14)),*/
-                SizedBox(height: 8),
-                Text('Référence: ${article.refArt}',
-                    style: TextStyle(fontSize: 14)),
-                SizedBox(height: 8),
-                Text('Prix HT: ${article.prixA} €',
-                    style: TextStyle(fontSize: 14)),
-                SizedBox(height: 8),
-                Text('TVA: ${article.tva} %', style: TextStyle(fontSize: 14)),
-                SizedBox(height: 8),
-                Text('Prix TTC: ${article.prixV} €',
-                    style: TextStyle(fontSize: 14)),
-                SizedBox(height: 8),
-                Text('Unités: ${article.unite}',
-                    style: TextStyle(fontSize: 14)),
-              ],
-            ),
+        ),
+        Container(
+          padding: EdgeInsets.all(16),
+          color: Colors.blue.shade50, // Une autre nuance de bleu très clair
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 8),
+              Text('Référence: ${article.refArt}',
+                  style: TextStyle(fontSize: 14)),
+              SizedBox(height: 8),
+              Text('Prix HT: ${article.prixA} €',
+                  style: TextStyle(fontSize: 14)),
+              SizedBox(height: 8),
+              Text('TVA: ${article.tva} %', style: TextStyle(fontSize: 14)),
+              SizedBox(height: 8),
+              Text('Prix TTC: ${article.prixV} €',
+                  style: TextStyle(fontSize: 14)),
+              SizedBox(height: 8),
+              Text('Unités: ${article.unite}',
+                  style: TextStyle(fontSize: 14)),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
-  void _showEditArticleDialog(BuildContext context, int index) {
-    Article article = articles[index];
+void _showEditArticleDialog(BuildContext context, int index) {
+  Article article = articles[index];
 
-    TextEditingController categorieController =
-        TextEditingController(text: article.categorie.toString());
-    TextEditingController referenceController =
-        TextEditingController(text: article.refArt);
-    TextEditingController libelleController =
-        TextEditingController(text: article.libArt);
-    TextEditingController puhtController =
-        TextEditingController(text: article.prixA.toString());
-    TextEditingController tvaController =
-        TextEditingController(text: article.tva.toString());
-    TextEditingController puttcController =
-        TextEditingController(text: article.prixV.toString());
-    TextEditingController unitesController =
-        TextEditingController(text: article.unite.toString());
+  final _formKey = GlobalKey<FormState>();
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Modifier l\'article'),
-          content: SingleChildScrollView(
+  TextEditingController categorieController = TextEditingController(
+    text: article.categorie.libelle.trim());
+  TextEditingController referenceController =
+      TextEditingController(text: article.refArt);
+  TextEditingController libelleController =
+      TextEditingController(text: article.libArt);
+  TextEditingController puhtController =
+      TextEditingController(text: article.prixA.toString());
+  TextEditingController tvaController =
+      TextEditingController(text: article.tva.toString());
+  TextEditingController puttcController =
+      TextEditingController(text: article.prixV.toString());
+  TextEditingController unitesController =
+      TextEditingController(text: article.unite.toString());
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text('Modifier l\'article'),
+        content: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextFormField(
                   controller: categorieController,
                   decoration: InputDecoration(labelText: 'Catégorie'),
+                  validator: (value) => value!.isEmpty ? 'Veuillez entrer la catégorie' : null,
                 ),
                 SizedBox(height: 16),
                 TextFormField(
                   controller: referenceController,
                   decoration: InputDecoration(labelText: 'Référence'),
+                  validator: (value) => value!.isEmpty ? 'Veuillez entrer la référence' : null,
                 ),
                 SizedBox(height: 16),
                 TextFormField(
                   controller: libelleController,
                   decoration: InputDecoration(labelText: 'Libellé'),
+                  validator: (value) => value!.isEmpty ? 'Veuillez entrer le libellé' : null,
                 ),
                 SizedBox(height: 16),
                 TextFormField(
                   controller: puhtController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(labelText: 'Prix HT'),
+                  validator: (value) => double.tryParse(value ?? '') == null ? 'Veuillez entrer un prix valide' : null,
                 ),
                 SizedBox(height: 16),
                 TextFormField(
                   controller: tvaController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(labelText: 'TVA (%)'),
+                  validator: (value) => int.tryParse(value ?? '') == null ? 'Veuillez entrer un pourcentage valide' : null,
                 ),
                 SizedBox(height: 16),
                 TextFormField(
                   controller: puttcController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(labelText: 'Prix TTC'),
+                  validator: (value) => double.tryParse(value ?? '') == null ? 'Veuillez entrer un prix valide' : null,
                 ),
                 SizedBox(height: 16),
                 TextFormField(
                   controller: unitesController,
                   decoration: InputDecoration(labelText: 'Unités'),
+                  validator: (value) => value!.isEmpty ? 'Veuillez entrer les unités' : null,
                 ),
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Annuler'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  articles[index] = Article(
-                    //id: idController,
-                    categorie:
-                        CategorieDTO.fromString(categorieController.text),
-                    refArt: referenceController.text,
-                    libArt: libelleController.text,
-                    prixA: double.parse(puhtController.text),
-                    tva: int.parse(tvaController.text),
-                    prixV: double.parse(puttcController.text),
-                    unite: UniteDTO.fromString(unitesController.text),
-                    id: null,
-                  );
-                });
-                Navigator.of(context).pop();
-                _showSnackBar('Article modifié');
-              },
-              child: Text('Modifier'),
-            ),
-          ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+  if (_formKey.currentState?.validate() ?? false) {
+    // Fetch existing IDs for Categorie and Unite (replace 1 and 2 with the correct logic)
+    int categorieId = article.categorie.id; // Use the original category ID or fetch from a dropdown or other method
+    int uniteId = article.unite.id; // Use the original unit ID or fetch from a dropdown or other method
+
+    // Create a new Article object with updated values
+    Article updatedArticle = Article(
+      categorie: CategorieDTO(id: categorieId, libelle: categorieController.text),
+      refArt: referenceController.text,
+      libArt: libelleController.text,
+      prixA: double.parse(puhtController.text),
+      tva: int.parse(tvaController.text),
+      prixV: double.parse(puttcController.text),
+      unite: UniteDTO(id: uniteId, libelle: unitesController.text),
+      id: article.id, // Keep the same ID for updating
     );
+
+    // Call the updateArticle function
+    updateArticle(updatedArticle);
+
+    Navigator.of(context).pop();
   }
+},
+
+            child: Text('Modifier'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+Future<void> updateArticle(Article article) async {
+  print('Attempting to update article: ${article.toJson()}');
+  
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? authToken = prefs.getString('token');
+  int? entrepriseId = prefs.getInt('entrepriseId');
+
+  Dio dio = Dio();
+  dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
+
+  var url = 'http://localhost:8080/api/articles/updateArticle/${article.id}';
+  print('Request URL: $url');
+
+  var body = jsonEncode(article.toJson());
+  print('Request Body: $body');
+
+  try {
+    var response = await dio.put(
+      url,
+      data: body,
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      ),
+    );
+
+    print('Response Status Code: ${response.statusCode}');
+    print('Response Data: ${response.data}');
+
+    if (response.statusCode == 200) {
+      _showSnackBar('Article modifié avec succès');
+    } else {
+      _showSnackBar('Échec de la modification de l\'article');
+    }
+  } catch (e) {
+    if (e is DioError) {
+      print('DioError: ${e.response?.statusCode} - ${e.response?.data}');
+    } else {
+      print('Error: $e');
+    }
+    _showSnackBar('Échec de la modification de l\'article');
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -626,6 +681,7 @@ class _GestionArticlesPageState extends State<GestionarticlePage> {
   }
 
   void _showAddArticleDialog(BuildContext context) {
+    // Clear the controllers
     _categorieController.clear();
     _referenceController.clear();
     _libelleController.clear();
@@ -722,22 +778,10 @@ class _GestionArticlesPageState extends State<GestionarticlePage> {
                       child: Text('Annuler'),
                     ),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_validateFields()) {
-                          setState(() {
-                            articles.add(Article(
-                              categorie: CategorieDTO.fromString(
-                                  _categorieController.text),
-                              refArt: _referenceController.text,
-                              libArt: _libelleController.text,
-                              prixA: double.parse(_puhtController.text),
-                              tva: int.parse(_tvaController.text),
-                              prixV: double.parse(_puttcController.text),
-                              unite:
-                                  UniteDTO.fromString(_unitesController.text),
-                              id: null,
-                            ));
-                          });
+                          // Call addArticle and pass the necessary data
+                          await addArticle();
                           Navigator.of(context).pop();
                           _showSnackBar('Article ajouté');
                         }

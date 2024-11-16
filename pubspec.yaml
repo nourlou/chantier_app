@@ -27,13 +27,31 @@ environment:
 # dependencies can be manually updated by changing the version numbers below to
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
+
 dependencies:
   flutter:
     sdk: flutter
+  webview_flutter: ^4.0.5
+  webview_flutter_android: ^3.16.4
+  webview_flutter_wkwebview: ^3.0.0
+  url_launcher: ^6.0.3
   http: ^0.13.3
-  google_fonts: ^3.0.1 
+  google_fonts: ^3.0.1
   shared_preferences: ^2.0.13
   dio: ^4.0.0
+  google_maps_flutter: ^2.1.1
+  flutter_secure_storage: ^7.0.0
+
+
+
+  
+
+  
+
+
+  
+
+
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -42,6 +60,8 @@ dependencies:
   supabase_auth_ui: ^0.4.4
   supabase_flutter: ^2.5.5
   flutter_native_splash: ^2.4.0
+
+  
 
 
 dev_dependencies:

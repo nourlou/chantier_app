@@ -1,4 +1,7 @@
+import 'package:chantier_test/MyInAppWebView.dart';
+import 'package:chantier_test/WebViewPage.dart';
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class DashbordProjetPage extends StatefulWidget {
   @override
@@ -72,6 +75,20 @@ class _DashbordProjetPageState extends State<DashbordProjetPage> {
                     contentPadding: EdgeInsets.symmetric(vertical: 12.0),
                   ),
                 ),
+                SizedBox(height: 20),
+              /*  ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                       builder: (context) => InAppWebViewPage(
+                  url: 'https://pub.dev/packages/webview_flutter/example',
+                ),
+                      ),
+                    );
+                  },
+                  child: Text('Open WebView'),
+                ),*/
               ],
             ),
           ),
@@ -86,8 +103,7 @@ class _DashbordProjetPageState extends State<DashbordProjetPage> {
                 : ListView.builder(
                     itemCount: _filteredTiles.length,
                     itemBuilder: (context, index) {
-                      return _buildDashboardTile(
-                          context, _filteredTiles[index]);
+                      return _buildDashboardTile(context, _filteredTiles[index]);
                     },
                   ),
           ),

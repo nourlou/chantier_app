@@ -32,7 +32,7 @@ class _GestionProjetPageState extends State<GestionProjetPage> {
       icon: Icons.add_business,
       title: 'Gestion chantier',
       //  subtitle: 'Ajouter un nouveau chantier',
-      routeName: '/projects',
+      routeName: '/gestionChantierPourChef',
       gradientColors: GestionProjetPage.chantierGradient,
     ),
     DashboardTile(
@@ -46,7 +46,7 @@ class _GestionProjetPageState extends State<GestionProjetPage> {
       icon: Icons.local_shipping,
       title: 'Gestion Fournisseur',
       //  subtitle: 'Gestion des fournisseurs',
-      routeName: '/fournisseur',
+      routeName: '/financeDashboard',
       gradientColors: GestionProjetPage.fournisseurGradient,
     ),
     DashboardTile(

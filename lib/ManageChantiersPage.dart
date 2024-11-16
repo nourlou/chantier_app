@@ -95,37 +95,38 @@ class _ManageProjectsPageState extends State<ManageProjectsPage> {
   }
 
   Future<void> fetchDataFromBackend() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? authToken = prefs.getString('token');
-    int? entrepriseId = prefs.getInt('entrepriseId');
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? authToken = prefs.getString('token');
+  int? entrepriseId = prefs.getInt('entrepriseId');
 
-    Dio dio = Dio();
-    dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
+  Dio dio = Dio();
+  dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
 
-    var url = 'http://192.168.1.7:8080/api/chantiers';
+  var url = 'http://localhost:8080/api/chantiers?entrepriseId=$entrepriseId';
 
-    try {
-      var response = await dio.get(
-        url,
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-          },
-        ),
-      );
-      print(response.data);
-      setState(() {
-        projects = parseProjects(response.data);
-      });
-    } catch (e) {
-      print('Error fetch data from backend: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to fetch data. Please try again later.'),
-        ),
-      );
-    }
+
+  try {
+    var response = await dio.get(
+      url,
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      ),
+    );
+    print(response.data);
+    setState(() {
+      projects = parseProjects(response.data);
+    });
+  } catch (e) {
+    print('Error fetch data from backend: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to fetch data. Please try again later.'),
+      ),
+    );
   }
+}
 
   Future<void> addChantier() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -135,7 +136,7 @@ class _ManageProjectsPageState extends State<ManageProjectsPage> {
     Dio dio = Dio();
     dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
 
-    var url = 'http://192.168.1.7:8080/api/chantiers/addChantier';
+    var url = 'http://localhost:8080/api/chantiers/addChantier';
 
     String ref = _referenceController.text;
     String libelle = _libelleController.text;
@@ -193,7 +194,7 @@ class _ManageProjectsPageState extends State<ManageProjectsPage> {
     dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
     print(project.id);
     var url =
-        'http://192.168.1.7:8080/api/chantiers/updateChantier/${project.id}';
+        'http://localhost:8080/api/chantiers/updateChantier/${project.id}';
     print(url);
     project.ref = _referenceController.text;
     project.libelle = _libelleController.text;
@@ -247,7 +248,7 @@ class _ManageProjectsPageState extends State<ManageProjectsPage> {
 
     print(project.id);
     var url =
-        'http://192.168.1.7:8080/api/chantiers/deleteChantier/${project.id}';
+        'http://localhost:8080/api/chantiers/deleteChantier/${project.id}';//192.168.1.7  
 
     try {
       print('Sending DELETE request to: $url');
@@ -368,16 +369,16 @@ class _ManageProjectsPageState extends State<ManageProjectsPage> {
                             context: context,
                             builder: (context) {
                               return AlertDialog(
-                                title: Text('Supprimer le projet'),
+                                title: Text('Supprimer projet'),
                                 content: Text(
-                                  'Êtes-vous sûr de vouloir supprimer ce projet ?',
+                                  'Etes-vous sûr de vouloir supprimer ce projet?',
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () {
                                       Navigator.of(context).pop();
                                     },
-                                    child: Text('Annuler'),
+                                    child: Text('Cancel'),
                                   ),
                                   TextButton(
                                     onPressed: () {

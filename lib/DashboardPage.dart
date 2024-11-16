@@ -15,34 +15,32 @@ class _DashboardPageState extends State<DashboardPage> {
   final List<Map<String, dynamic>> _dashboardItems = [
     {
       'icon': Icons.business,
-      'title': 'Manage Projects',
-      'subtitle': 'Add, view, and update construction projects',
+      'title': 'Gérer les Projets',
+      'subtitle': 'Ajouter, voir et mettre à jour les projets de construction',
       'routeName': '/gestion',
       'color': Color.fromARGB(255, 18, 57, 135),
     },
     {
       'icon': Icons.people,
-      'title': 'Manage Users',
-      'subtitle': 'Add, view, and update user information',
+      'title': 'Gérer les Utilisateurs',
+      'subtitle': 'Ajouter, voir et mettre à jour les informations des utilisateurs',
       'routeName': '/manage_users',
       'color': Color.fromARGB(255, 138, 166, 231),
     },
     {
-  'icon': Icons.shopping_cart,
-  'title': 'ACHATS',
-  'subtitle': 'Manage budget, expenses, and financial reports',
-  'routeName': '/achats',
-  'color': Color.fromARGB(255, 175, 212, 212),
-   },
+      'icon': Icons.shopping_cart,
+      'title': 'ACHATS',
+      'subtitle': 'Gérer le budget, les dépenses et les rapports financiers',
+      'routeName': '/achats',
+      'color': Color.fromARGB(255, 175, 212, 212),
+    },
     {
       'icon': Icons.attach_money,
-      'title': 'Finance Management',
-      'subtitle': 'Manage budget, expenses, and financial reports',
+      'title': 'Gestion Financière',
+      'subtitle': 'Gérer le budget, les dépenses et les rapports financiers',
       'routeName': '/finance_management',
       'color': Color.fromARGB(255, 14, 98, 98),
     },
-    
-
   ];
 
   List<Map<String, dynamic>> _filteredItems = [];
@@ -74,25 +72,25 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Welcome, ${widget.userName}'), // Titre dynamique avec le nom d'utilisateur
-        backgroundColor: Color.fromARGB(255, 188, 190, 215), // Couleur d'arrière-plan de l'AppBar
+        title: Text('Bienvenue, ${widget.userName}'), 
+        backgroundColor: Color.fromARGB(255, 188, 190, 215), 
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home, color: Colors.grey),
             activeIcon: Icon(Icons.home, color: Colors.blueAccent),
-            label: 'Home',
+            label: 'Accueil',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.business, color: Colors.grey),
             activeIcon: Icon(Icons.business, color: Colors.blueAccent),
-            label: 'Projects',
+            label: 'Projets',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.account_circle, color: Colors.grey),
             activeIcon: Icon(Icons.account_circle, color: Colors.blueAccent),
-            label: 'Profile',
+            label: 'Profil',
           ),
         ],
         selectedItemColor: Colors.blueAccent,
@@ -121,7 +119,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 controller: _searchController,
                 decoration: InputDecoration(
                   prefixIcon: Icon(Icons.search, color: Color.fromARGB(255, 60, 64, 104)),
-                  labelText: 'How can we help you?',
+                  labelText: 'Comment pouvons-nous vous aider ?',
                   labelStyle: TextStyle(color: Color.fromARGB(255, 60, 64, 104)),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -165,8 +163,8 @@ class _DashboardPageState extends State<DashboardPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildStatisticsCard('Projects', '24', Icons.business, Color.fromARGB(255, 114, 152, 227)),
-        _buildStatisticsCard('Users', '58', Icons.people, Color.fromARGB(255, 171, 190, 234)),
+        _buildStatisticsCard('Projets', '24', Icons.business, Color.fromARGB(255, 114, 152, 227)),
+        _buildStatisticsCard('Utilisateurs', '58', Icons.people, Color.fromARGB(255, 171, 190, 234)),
         _buildStatisticsCard('Finance', '\$45K', Icons.attach_money, Color.fromARGB(255, 75, 167, 167)),
       ],
     );

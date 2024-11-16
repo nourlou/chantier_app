@@ -28,141 +28,134 @@ class _DepencePageState extends State<DepencePage> {
     fetchPayments();
   }
 
-  Future<void> fetchlignesAchat() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? authToken = prefs.getString('token');
-    int? entrepriseId = prefs.getInt('entrepriseId');
+Future<void> fetchlignesAchat() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? authToken = prefs.getString('token');
+  int? entrepriseId = prefs.getInt('entrepriseId');
 
-    Dio dio = Dio();
-    dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
+  Dio dio = Dio();
+  dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
 
-    var url = 'http://192.168.1.7:8080/api/lignesAchat';
+  var url = 'http://localhost:8080/api/lignesAchat';
 
-    try {
-      var response = await dio.get(
-        url,
-        queryParameters: {
-          'entrepriseId': entrepriseId,
-          'article': _articleController.text,
-          'chantier': _chantierController.text,
-          'categorie': _categorieController.text,
-          'totlig': _totligController.text,
-          'dateAchat': _dateController.text,
-        }, // Include filters as query parameters
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-          },
-        ),
-      );
+  try {
+    var response = await dio.get(
+      url,
+      queryParameters: {
+        'entrepriseId': entrepriseId,
+        'article': _articleController.text,
+        'chantier': _chantierController.text,
+        'categorie': _categorieController.text,
+        'totlig': _totligController.text,
+        'dateAchat': _dateController.text,
+      },
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      ),
+    );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        print('fetch lignes Data from API: ${response.data}');
+    if (response.statusCode == 200) {
+      List<Map<String, dynamic>> depences = List<Map<String, dynamic>>.from(response.data.map((depence) {
+        return {
+          'article': depence['article']?['libArt'] ?? '',
+          'chantier': depence['chantierAchat']?['ref'] ?? '',
+          'categorie': depence['article']?['categorie']?['libelle'] ?? '',
+          'totlig': depence['totlig'] ?? 0.0,
+          'dateAchat': depence['dateAchat'],
+        };
+      }));
 
-        List<Map<String, dynamic>> depences =
-            response.data.map<Map<String, dynamic>>((depence) {
-          return {
-            'article': depence['article']?['libArt'] ?? '',
-            'chantier': depence['chantierAchat']?['ref'] ?? '',
-            'categorie': depence['article']?['categorie']?['libelle'] ?? '',
-            'totlig': depence['totlig'] ?? 0.0,
-            'dateAchat': depence['dateAchat'],
-          };
-        }).toList();
-
-        print(depences);
-        setState(() {
-          _depences = depences;
-        });
-      } else {
-        print('Error fetching data from backend: ${response.statusCode}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to fetch data. Please try again later.'),
-          ),
-        );
-      }
-    } catch (e) {
-      if (e is DioError) {
-        print('Dio error: ${e.response?.statusCode}');
-        print('Dio error data: ${e.response?.data}');
-      } else {
-        print('Unexpected error: $e');
-      }
+      setState(() {
+        _depences = depences;
+      });
+    } else {
+      print('Error fetching data from backend: ${response.statusCode}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to fetch data. Please try again later.'),
         ),
       );
     }
+  } catch (e) {
+    if (e is DioError) {
+      print('Dio error: ${e.response?.statusCode}');
+      print('Dio error data: ${e.response?.data}');
+    } else {
+      print('Unexpected error: $e');
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to fetch data. Please try again later.'),
+      ),
+    );
   }
+}
+
 
   Future<void> fetchPayments() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? authToken = prefs.getString('token');
-    int? entrepriseId = prefs.getInt('entrepriseId');
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? authToken = prefs.getString('token');
+  int? entrepriseId = prefs.getInt('entrepriseId');
 
-    Dio dio = Dio();
-    dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
+  Dio dio = Dio();
+  dio.interceptors.add(AuthInterceptor(entrepriseId, authToken));
 
-    var url = 'http://192.168.1.7:8080/api/payements';
+  var url = 'http://localhost:8080/api/payements';
 
-    try {
-      var response = await dio.get(
-        url,
-        queryParameters: {
-          'entrepriseId': entrepriseId,
-          'includeEmployee':
-              true, // Ajoutez ce paramètre pour inclure les détails de l'employé
+  try {
+    var response = await dio.get(
+      url,
+      queryParameters: {
+        'entrepriseId': entrepriseId,
+        'includeEmployee': true,
+      },
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
         },
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-          },
-        ),
-      );
+      ),
+    );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        print('fetch payment Data from API: ${response.data}');
+    if (response.statusCode == 200) {
+      List<Map<String, dynamic>> payments = List<Map<String, dynamic>>.from(response.data.map((payment) {
+        return {
+          'id': payment['id'],
+          'montant': payment['montant'],
+          'datePay': payment['datePay'],
+          'chantier': payment['chantier']['libelle'],
+          'prenom': payment['employe']['prenom'],
+          'nom': payment['employe']['nom'],
+        };
+      }));
 
-        List<Map<String, dynamic>> payments =
-            List<Map<String, dynamic>>.from(response.data).map((payment) {
-          return {
-            'id': payment['id'],
-            'montant': payment['montant'],
-            'datePay': payment['datePay'],
-            'chantier': payment['chantier']['libelle'],
-            'prenom': payment['employe']['prenom'],
-            'nom': payment['employe']['nom'],
-          };
-        }).toList();
-
-        print(payments);
-        setState(() {
-          _payments = payments;
-        });
-      } else {
-        print('Error fetching data from backend: ${response.statusCode}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to fetch data. Please try again later.'),
-          ),
-        );
-      }
-    } catch (e) {
-      if (e is DioError) {
-        print('Dio error: ${e.response?.statusCode}');
-        print('Dio error data: ${e.response?.data}');
-      } else {
-        print('Unexpected error: $e');
-      }
+      setState(() {
+        _payments = payments;
+      });
+    } else {
+      print('Error fetching data from backend: ${response.statusCode}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to fetch data. Please try again later.'),
         ),
       );
     }
+  } catch (e) {
+    if (e is DioError) {
+      print('Dio error: ${e.response?.statusCode}');
+      print('Dio error data: ${e.response?.data}');
+    } else {
+      print('Unexpected error: $e');
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to fetch data. Please try again later.'),
+      ),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

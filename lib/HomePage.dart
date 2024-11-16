@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -19,9 +18,9 @@ class HomePage extends StatelessWidget {
             ),
             SizedBox(height: 20.0),
             const Text(
-              'Construction app',
+              'Chantier Pro',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.blue,
                 letterSpacing: 1,
@@ -30,10 +29,10 @@ class HomePage extends StatelessWidget {
             ),
             SizedBox(height: 10.0),
             Text(
-              'The best app for managing construction projects',
+              'La meilleure application pour gérer les projets de construction',
               style: TextStyle(
                 color: Colors.grey,
-                fontSize: 15,
+                fontSize: 12,
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -50,7 +49,7 @@ class HomePage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
-              child: Text('Login'),
+              child: Text('Se Connecter'),
             ),
             SizedBox(height: 10.0),
             ElevatedButton(
@@ -66,7 +65,7 @@ class HomePage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
-              child: Text('Sign Up'),
+              child: Text('S\'inscrire'),
             ),
           ],
         ),
